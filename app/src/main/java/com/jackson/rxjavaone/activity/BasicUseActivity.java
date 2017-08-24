@@ -13,7 +13,10 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class BasicUseActivity extends AppCompatActivity {
 
@@ -103,7 +106,7 @@ public class BasicUseActivity extends AppCompatActivity {
     //-----------------------------------------第三种方法---- 不完整定义的回调-------------------------
     public void send() {
         mess = "";
-
+/****
         //创建Observable，just方法
         Observable observable = Observable.just("start", mEtSend.getText().toString().trim(), "complete");
 
@@ -119,9 +122,43 @@ public class BasicUseActivity extends AppCompatActivity {
         Action1<Throwable> onErrorAction = new Action1<Throwable>() {
             @Override
             public void call(Throwable throwable) {
-                CommonMethod.showToast(BasicUseActivity.this, "Error");
+                CommonMethod.showToast(BasicUseActivity.this, throwable.getMessage());
             }
         };
+
+        Action0 onCompletedAction=new Action0() {
+            @Override
+            public void call() {
+                CommonMethod.showToast(BasicUseActivity.this, "Completed");
+            }
+        };
+
+        observable.subscribe(onNextAction,onErrorAction,onCompletedAction);   ***/
+
+        //简写
+
+        Observable.just("start", mEtSend.getText().toString().trim(), "complete")
+                .subscribeOn(Schedulers.io())  //指定 subscribe() 发生在 IO 线程，事件生产的线程
+                .observeOn(AndroidSchedulers.mainThread())  //指定 Subscriber 的回调发生在主线程 ,事件消费线程
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        mess += s + "\n";
+                        mTvReceive.setText(mess);
+                    }
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        CommonMethod.showToast(BasicUseActivity.this, throwable.getMessage());
+                    }
+                }, new Action0() {
+                    @Override
+                    public void call() {
+                        CommonMethod.showToast(BasicUseActivity.this, "Completed");
+                    }
+                });
+
+
     }
 
 
